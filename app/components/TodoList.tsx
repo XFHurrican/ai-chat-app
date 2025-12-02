@@ -1,5 +1,13 @@
 import TodoItem from './TodoItem';
 
+interface FileResource {
+  id: number;
+  name: string;
+  type: string;
+  url: string;
+  uploadedAt: Date;
+}
+
 interface Todo {
   id: number;
   title: string;
@@ -7,6 +15,7 @@ interface Todo {
   createdAt: Date;
   updatedAt: Date;
   deadline?: Date;
+  files: FileResource[];
 }
 
 interface TodoListProps {
