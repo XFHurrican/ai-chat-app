@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import AddTodo from './components/AddTodo';
 import TodoList from './components/TodoList';
-import FileResourcePool from './components/FileResourcePool';
 
 interface FileResource {
   id: number;
@@ -98,35 +98,6 @@ export default function Home() {
     saveToLocalStorage();
   };
 
-  // Add file resource
-  const handleAddFileResource = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const newFileResource: FileResource = {
-        id: nextFileId,
-        name: file.name,
-        type: file.type,
-        url: e.target?.result as string,
-        uploadedAt: new Date(),
-      };
-      setFileResources([newFileResource, ...fileResources]);
-      setNextFileId(nextFileId + 1);
-      saveToLocalStorage();
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Delete file resource
-  const handleDeleteFileResource = (fileId: number) => {
-    setFileResources(fileResources.filter(file => file.id !== fileId));
-    // Also remove from all todos
-    setTodos(todos.map(todo => ({
-      ...todo,
-      files: todo.files.filter(file => file.id !== fileId),
-    })));
-    saveToLocalStorage();
-  };
-
   // Toggle todo completion
   const handleToggleTodo = (id: number, completed: boolean) => {
     setTodos(todos.map((todo) => {
@@ -151,17 +122,19 @@ export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <main className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Todo App</h1>
-          <p className="text-gray-600">A simple and elegant todo application with resource pool</p>
+        {/* Navigation */}
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Todo App</h1>
+            <p className="text-gray-600">A simple and elegant todo application with resource pool</p>
+          </div>
+          <Link 
+            href="/resources" 
+            className="inline-flex items-center gap-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            管理资源池 →
+          </Link>
         </div>
-
-        {/* File Resource Pool */}
-        <FileResourcePool
-          fileResources={fileResources}
-          onAddFile={handleAddFileResource}
-          onDeleteFile={handleDeleteFileResource}
-        />
 
         {/* Add Todo Form */}
         <AddTodo 
