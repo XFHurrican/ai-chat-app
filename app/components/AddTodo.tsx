@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface FileResource {
   id: number;
@@ -16,8 +16,40 @@ interface AddTodoProps {
 export default function AddTodo({ onAddTodo, fileResources }: AddTodoProps) {
   const [title, setTitle] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
   const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
   const [showFileSelector, setShowFileSelector] = useState(false);
+  const [tempDate, setTempDate] = useState('');
+  const [tempTime, setTempTime] = useState('');
+  const dateTimePickerRef = useRef<HTMLDivElement>(null);
+  const dateTimeInputRef = useRef<HTMLInputElement>(null);
+
+  // Close datetime picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dateTimePickerRef.current && !dateTimePickerRef.current.contains(event.target as Node) &&
+          dateTimeInputRef.current && !dateTimeInputRef.current.contains(event.target as Node)) {
+        setShowDateTimePicker(false);
+      }
+    };
+
+    if (showDateTimePicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDateTimePicker]);
+
+  const handleDateTimeConfirm = () => {
+    if (tempDate || tempTime) {
+      // Combine date and time
+      const combinedDateTime = `${tempDate}T${tempTime}`;
+      setDeadline(combinedDateTime);
+    }
+    setShowDateTimePicker(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,23 +99,85 @@ export default function AddTodo({ onAddTodo, fileResources }: AddTodoProps) {
           placeholder="Add a new todo..."
           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <div className="relative">
-          {/* Hidden input that actually stores the datetime value */}
+        <div className="relative w-64 flex-shrink-0">
+          {/* Display input that triggers the custom picker */}
           <input
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            lang="en"
+            ref={dateTimeInputRef}
+            type="text"
+            value={deadline ? deadline.replace('T', ' ') : ''}
+            onFocus={() => {
+              // Initialize temp values from current deadline
+              if (deadline) {
+                const [date, time] = deadline.split('T');
+                setTempDate(date);
+                setTempTime(time);
+              }
+              setShowDateTimePicker(true);
+            }}
+            onClick={() => {
+              // Initialize temp values from current deadline
+              if (deadline) {
+                const [date, time] = deadline.split('T');
+                setTempDate(date);
+                setTempTime(time);
+              }
+              setShowDateTimePicker(true);
+            }}
+            placeholder="YYYY-MM-DD HH:MM"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-pointer placeholder-gray-400"
+            readOnly
           />
-          {/* Custom visible input that shows our English placeholder */}
-          <div className="px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent cursor-pointer">
-            {deadline ? (
-              <span className="text-gray-900">{deadline.replace('T', ' ')}</span>
-            ) : (
-              <span className="text-gray-400">yyyy/mm/dd --:--</span>
-            )}
-          </div>
+          
+          {/* Custom DateTime Picker Overlay */}
+          {showDateTimePicker && (
+            <div ref={dateTimePickerRef} className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-4 w-80">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700">Select Date and Time</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Date Picker */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={tempDate}
+                      onChange={(e) => setTempDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  {/* Time Picker */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Time</label>
+                    <input
+                      type="time"
+                      value={tempTime}
+                      onChange={(e) => setTempTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                {/* Confirm Button */}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDateTimePicker(false)}
+                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDateTimeConfirm}
+                    className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <button
           type="button"
